@@ -1,0 +1,36 @@
+<?php
+
+/**
+ * @file
+ * Contains installation hooks.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function final_polish_icon_uninstall() {
+  // We have to remove following settings.
+  $settings = array('toggle_icon', 'default_icon', 'icon_path', 'icon_upload');
+
+  // We iterate all themes and remove our settings.
+  foreach (list_themes() as $theme => $info) {
+    $name = 'theme_' . $theme . '_settings';
+    $config = variable_get($name);
+    if ($config) {
+      foreach ($settings as $setting) {
+        unset($config[$setting]);
+      }
+
+      variable_set($name, $config);
+    }
+  }
+
+  // Finally we have to remove our settings from the global settings.
+  $name = 'theme_settings';
+  $config = variable_get($name);
+  foreach ($settings as $setting) {
+    unset($config[$setting]);
+  }
+
+  variable_set($name, $config);
+}

@@ -1,0 +1,5 @@
+name = Final Polish Icon
+description = Adds the functionality to upload an image to themes and use them as favicon or touch icon.
+core = 7.x
+dependencies[] = final_polish
+configure = admin/appearance/settings

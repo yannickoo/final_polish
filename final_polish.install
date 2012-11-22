@@ -1,0 +1,21 @@
+<?php
+
+/**
+ * @file
+ * Contains installation hooks.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function final_polish_install() {
+  $paths = array(
+    'filter/tips',
+    'taxonomy/term/*/feed',
+    'rss.xml',
+  );
+
+  $paths = implode("\n", $paths);
+
+  variable_set('final_polish_remove_paths', $paths);
+}
