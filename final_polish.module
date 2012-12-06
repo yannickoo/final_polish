@@ -164,8 +164,7 @@ function final_polish_get_config_path() {
  * Return trimmed paths to remove.
  */
 function final_polish_get_remove_paths() {
-  $paths = variable_get('final_polish_remove_paths');
-  $paths = explode("\n", $paths);
+  $paths = variable_get('final_polish_remove_paths', array());
 
   foreach ($paths as $k => $path) {
     $paths[$k] = trim($path);

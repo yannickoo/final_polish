@@ -77,59 +77,64 @@ function final_polish_icon_form_system_theme_settings_alter(&$form, &$form_state
     $key = '';
   }
 
+  $icons = final_polish_icon_types();
+
   $form['#validate'][] = 'final_polish_icon_theme_settings_validate';
   $form['#submit'][] = 'final_polish_icon_theme_settings_submit';
 
-  $form['theme_settings']['toggle_icon'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Icon'),
-    '#default_value' => theme_get_setting('toggle_icon', $key),
-  );
+  foreach ($icons as $icon => $info) {
+    $form['theme_settings']['toggle_' . $icon] = array(
+      '#type' => 'checkbox',
+      '#title' => ucfirst(t($info['name'])), // What to do here?
+      '#default_value' => theme_get_setting('toggle_' . $icon, $key),
+    );
 
-  $form['icon'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Icon settings'),
-    '#description' => t('The icon will be used for other images like the favicon or touch icon.'),
-  );
+    $form[$icon] = array(
+      '#type' => 'fieldset',
+      '#title' => ucfirst(t('@icon settings', array('@icon' => $info['name']))),
+      '#description' => t('The @icon will be used as touch icon for mobile devices.', array('@icon' => $info['name'])),
+    );
 
-  $form['icon']['default_icon'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use default icon'),
-    '#default_value' => theme_get_setting('default_icon', $key),
-    '#tree' => FALSE,
-    '#description' => t('Check here if you want the theme to use the icon supplied with it.'),
-  );
+    $form[$icon]['default_' . $icon] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use default @icon', array('@icon' => $info['name'])),
+      '#default_value' => theme_get_setting('default_' . $icon, $key),
+      '#tree' => FALSE,
+      '#description' => t('Check here if you want the theme to use the @icon supplied with it.', array('@icon' => $info['name'])),
+    );
 
-  $form['icon']['settings'] = array(
-    '#type' => 'container',
-    '#states' => array(
-      'invisible' => array(
-        'input[name="default_icon"]' => array('checked' => TRUE),
+    $form[$icon]['settings'] = array(
+      '#type' => 'container',
+      '#states' => array(
+        'invisible' => array(
+          'input[name="default_' . $icon . '"]' => array('checked' => TRUE),
+        ),
       ),
-    ),
-  );
+    );
 
-  $icon_path = theme_get_setting('icon_path', $key);
+    $icon_path = theme_get_setting($icon . '_path', $key);
 
-  // If $icon is a public:// URI, display the path relative
-  // to the files directory; stream wrappers are not end-user friendly.
-  if (file_uri_scheme($icon_path) == 'public') {
-    $icon_path = file_uri_target($icon_path);
+    // If $icon is a public:// URI, display the path relative
+    // to the files directory; stream wrappers are not end-user friendly.
+    if (file_uri_scheme($icon_path) == 'public') {
+      $icon_path = file_uri_target($icon_path);
+    }
+
+    $form[$icon]['settings'][$icon . '_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Path to custom @icon', array('@icon' => $info['name'])),
+      '#description' => t('The path to the file you would like to use as your @icon file instead of the default @icon.', array('@icon' => $info['name'])),
+      '#default_value' => $icon_path,
+    );
+
+    $form[$icon]['settings'][$icon . '_upload'] = array(
+      '#type' => 'file',
+      '#title' => t('Upload @icon image', array('@icon' => $info['name'])),
+      '#maxlength' => 40,
+      '#description' => t("If you don't have direct file access to the server, use this field to upload your @icon.", array('@icon' => $info['name'])),
+    );
+
   }
-
-  $form['icon']['settings']['icon_path'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Path to custom icon'),
-    '#description' => t('The path to the file you would like to use as your icon file instead of the default icon.'),
-    '#default_value' => $icon_path,
-  );
-
-  $form['icon']['settings']['icon_upload'] = array(
-    '#type' => 'file',
-    '#title' => t('Upload icon image'),
-    '#maxlength' => 40,
-    '#description' => t("If you don't have direct file access to the server, use this field to upload your icon."),
-  );
 }
 
 /**
@@ -146,37 +151,42 @@ function final_polish_icon_theme_settings_validate($form, &$form_state) {
   // Handle file uploads.
   $validators = array('file_validate_is_image' => array());
 
-  // Check for a new uploaded icon.
-  $file = file_save_upload('icon_upload', $validators);
-  if (isset($file)) {
-    // File upload was attempted.
-    if ($file) {
-      $values['icon_upload'] = $file;
-      // If the user uploaded a new icon, save it to a permanent
-      // location and use it in place of the default theme-provided file.
-      $filename = file_unmanaged_copy($file->uri);
-      unset($values['icon_upload']);
-      $values['default_icon'] = 0;
-      $values['icon_path'] = $filename;
-      $values['toggle_icon'] = 1;
-    }
-    else {
-      // File upload failed.
-      form_set_error('icon_upload', t('The icon could not be uploaded.'));
-    }
-  }
+  $icons = final_polish_icon_types();
 
-  // If the user provided a path for an icon file, make sure a file
-  // exists at that path.
-  if ($values['icon_path']) {
-    $path = _system_theme_settings_validate_path($values['icon_path']);
-    if (!$path) {
-      form_set_error('icon_path', t('The custom icon path is invalid.'));
+  foreach ($icons as $icon => $info) {
+    // Check for a new uploaded icon.
+    $file = file_save_upload($icon . '_upload', $validators);
+    if (isset($file)) {
+      // File upload was attempted.
+      if ($file) {
+        $values[$icon . '_upload'] = $file;
+        // If the user uploaded a new icon, save it to a permanent
+        // location and use it in place of the default theme-provided file.
+        $filename = file_unmanaged_copy($file->uri);
+        unset($values[$icon . '_upload']);
+        dpm($values);
+        $values['default_' . $icon] = 0;
+        $values[$icon] = $filename;
+        $values['toggle_' . $icon] = 1;
+      }
+      else {
+        // File upload failed.
+        form_set_error($icon . '_upload', t('The @icon could not be uploaded.', array('@icon' => $info['name'])));
+      }
     }
-  }
-  elseif (!$form_state['values']['default_icon']) {
-    $values['toggle_icon'] = 0;
-    // @TODO: Add error messsage?
+
+    // If the user provided a path for an icon file, make sure a file
+    // exists at that path.
+    if ($values[$icon . '_path']) {
+      $path = _system_theme_settings_validate_path($values[$icon . '_path']);
+      if (!$path) {
+        form_set_error($icon . '_path', t('The custom @icon path is invalid.', array('@icon' => $info['name'])));
+      }
+    }
+    elseif (!$values['default_' . $icon]) {
+      $values['toggle_' . $icon] = 0;
+      // @TODO: Add error messsage?
+    }
   }
 
 }
@@ -190,32 +200,33 @@ function final_polish_icon_theme_settings_submit($form, &$form_state) {
     $key = '';
   }
 
+  $icons = final_polish_icon_types();
+
   $values = $form_state['values'];
 
   $old_settings = array(
     theme_get_setting('default_favicon', $key),
     file_uri_target(theme_get_setting('favicon_path', $key)),
     theme_get_setting('toggle_favicon', $key),
-    theme_get_setting('default_icon', $key),
-    file_uri_target(theme_get_setting('icon_path', $key)),
-    theme_get_setting('toggle_icon', $key),
   );
+
+  foreach ($icons as $icon => $info) {
+    $old_settings[] = theme_get_setting('default_' . $icon, $key);
+    $old_settings[] = file_uri_target(theme_get_setting($icon . '_path', $key));
+    $old_settings[] = theme_get_setting('toggle_' . $icon, $key);
+  }
 
   $new_settings = array(
     $values['default_favicon'],
     $values['favicon_path'],
     $values['toggle_favicon'],
-    $values['default_icon'],
-    $values['icon_path'],
-    $values['toggle_icon'],
   );
 
-  if ($key == '') {
-    $key = 'global';
+  foreach ($icons as $icon => $name) {
+    $new_settings[] = $values['default_' . $icon];
+    $new_settings[] = $values[$icon . '_path'];
+    $new_settings[] = $values['toggle_' . $icon];
   }
-
-  final_polish_icon_get_icon('favicon', TRUE, $key);
-  final_polish_icon_get_icon('icon', TRUE, $key);
 
   if (count(array_diff($old_settings, $new_settings))) {
     menu_rebuild();
@@ -237,56 +248,6 @@ function final_polish_icon_html_head_alter(&$head_elements) {
 }
 
 /**
- * Implements hook_form_FORM_ID_alter().
- */
-function final_polish_icon_form_final_polish_configure_alter(&$form, &$form_state, $form_id) {
-  $form['icons'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Icons'),
-    '#description' => t('Here you can see which image is used for the specific icon.'),
-  );
-
-  $config = variable_get('final_polish_icon_sources', array());
-  $sources = final_polish_icon_sources();
-
-  foreach ($config as $theme => $conf) {
-    $form['icons'][$theme] = array(
-      '#type' => 'fieldset',
-      '#title' => ucfirst($theme),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-      '#weight' => ($theme != 'global') ? 1 : 0,
-    );
-
-    if ($theme == 'global') {
-      $theme_param = '';
-    }
-    else {
-      $theme_param = $theme;
-    }
-
-    $rows = array();
-
-    foreach ($conf as $type => $c) {
-      $preview_url = final_polish_icon_get_icon($type, TRUE, $theme_param);
-      $large_url = final_polish_icon_get_icon($type, FALSE, $theme_param);
-      $source = $sources[$c];
-      $preview = l(theme('image', array('path' => $preview_url)), $large_url, array('html' => TRUE));
-      $type = ucfirst($type);
-
-      $rows[] = array($preview, $type, $source);
-    }
-
-    $form['icons'][$theme]['table'] = array(
-      '#theme' => 'table',
-      '#header' => array(t('Preview'), t('Type'), t('Source')),
-      '#rows' => $rows,
-    );
-  }
-
-}
-
-/**
  * Returning a raw image from theme.
  *
  * @param string $path
@@ -302,37 +263,6 @@ function final_polish_icon_raw_image($path) {
     drupal_add_http_header('Content-Type', $mimetype);
     readfile($path);
   }
-}
-
-/**
- * Saving the source of an icon per theme.
- *
- * @param string $theme
- *   The name of the theme.
- * @param string $type
- *   Type of the icon - can be favicon or icon.
- * @param string $source
- *   The source of the icon.
- */
-function final_polish_icon_set_icon_source($theme, $type, $source) {
-  $theme = empty($theme) ? 'global' : $theme;
-  $config = variable_get('final_polish_icon_sources', array());
-
-  $config[$theme][$type] = $source;
-
-  variable_set('final_polish_icon_sources', $config);
-}
-
-/**
- * Returning the definition for the sources.
- */
-function final_polish_icon_sources() {
-  return array(
-    'global_theme_settings' => t('Global theme settings'),
-    'icon' => t('Icon'),
-    'theme_directory' => t('Theme directory'),
-    'theme_settings' => t('Theme settings'),
-  );
 }
 
 /**
@@ -400,8 +330,8 @@ function final_polish_icon_get_icon($type, $styled = TRUE, $theme = '') {
     // When theme doesn't have an icon, we get it from default settings.
     if (empty($icon) && theme_get_setting($settings['default'], $theme)) {
       $icon = theme_get_setting($settings['path'], '');
-      if (file_uri_scheme($icon) != 'public') {
-        $icon = file_build_uri($icon, 'efwfw');
+      if (!empty($icon) && file_uri_scheme($icon) != 'public') {
+        $icon = file_build_uri($icon);
       }
       $source = 'global_theme_settings';
     }
@@ -416,8 +346,8 @@ function final_polish_icon_get_icon($type, $styled = TRUE, $theme = '') {
       elseif (empty($icon)) {
         // When there is no icon in the theme we get the global icon.
         $icon = theme_get_setting($settings['path'], '');
-        if (file_uri_scheme($icon) != 'public') {
-          $icon = file_build_uri($icon, 'efwfw');
+        if (!empty($icon) && file_uri_scheme($icon) != 'public') {
+          $icon = file_build_uri($icon);
         }
         $source = 'global_theme_settings';
       }
@@ -430,10 +360,34 @@ function final_polish_icon_get_icon($type, $styled = TRUE, $theme = '') {
       $icon = file_create_url($icon);
     }
 
-    final_polish_icon_set_icon_source($theme, $type, $source);
+    // Last try, let's use Drupal's default favicon.
+    if (empty($icon) && $type == 'favicon') {
+      $icon = 'misc/favicon.ico';
+      $source = 'drupal';
+    }
 
     return $icon;
   }
 
   return '';
+}
+
+/**
+ * Helper function to get all icon types.
+ *
+ * @return array
+ *   All defined icons, key is the machine readable name
+ *   and the value is the human readable name.
+ */
+function final_polish_icon_types() {
+  return array(
+    'touch_icon' => array(
+      'name' => 'touch icon',
+      'file' => 'apple-touch-icon.png'
+    ),
+    'touch_icon_precomposed' => array(
+      'name' => 'precomposed touch icon',
+      'file' => 'apple-touch-icon-precomposed.png',
+    ),
+  );
 }

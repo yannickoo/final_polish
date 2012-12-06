@@ -1,5 +1,5 @@
 name = Final Polish
 description = This module allows you to fix common issues.
 core = 7.x
-
-configure = admin/config/system/final_polish
+package = Final Polish
+configure = admin/config/system/final-polish

@@ -1,0 +1,7 @@
+name = Final Polish Forms
+description = Allows you to manipulate predefined forms.
+core = 7.x
+package = Final Polish
+dependencies[] = final_polish
+dependencies[] = variable
+configure = admin/config/system/final-polish

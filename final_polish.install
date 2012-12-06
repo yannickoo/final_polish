@@ -9,13 +9,48 @@
  * Implements hook_install().
  */
 function final_polish_install() {
+  $front = variable_get('site_frontpage');
+
   $paths = array(
     'filter/tips',
-    'taxonomy/term/*/feed',
-    'rss.xml',
   );
 
-  $paths = implode("\n", $paths);
+  // Removing /node and /rss.xml when node is not the frontpage.
+  if ($front != 'node') {
+    $paths[] = 'node';
+    $paths[] = 'rss.xml';
+  }
 
   variable_set('final_polish_remove_paths', $paths);
+}
+
+/**
+ * Implements hook_enable().
+ */
+function final_polish_enable() {
+  $paths = variable_get('final_polish_remove_paths');
+  if (count($paths)) {
+    $paths = implode(', ', $paths);
+
+    drupal_set_message(t('Final Polish module removed following paths: %paths. You can configure them <a href="@config">here</a>.', array('%paths' => $paths, '@config' => url('admin/config/system/final-polish'))), 'warning');
+  }
+}
+
+/**
+ * Implements hook_disable().
+ */
+function final_polish_disable() {
+  $paths = variable_get('final_polish_remove_paths');
+  if (count($paths)) {
+    $paths = implode(', ', $paths);
+
+    drupal_set_message(t('Following paths are no longer removed: %paths', array('%paths' => $paths)), 'warning');
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function final_polish_uninstall() {
+  variable_del('final_polish_remove_paths');
 }
