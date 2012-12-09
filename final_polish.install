@@ -32,6 +32,8 @@ function final_polish_enable() {
   if (count($paths)) {
     $paths = implode(', ', $paths);
 
+    // We should notify the user that specific paths are removed from now and
+    // where they can be configured.
     drupal_set_message(t('Final Polish module removed following paths: %paths. You can configure them <a href="@config">here</a>.', array('%paths' => $paths, '@config' => url('admin/config/system/final-polish'))), 'warning');
   }
 }
@@ -44,6 +46,7 @@ function final_polish_disable() {
   if (count($paths)) {
     $paths = implode(', ', $paths);
 
+    // We should notify the user that specific paths are no longer removed.
     drupal_set_message(t('Following paths are no longer removed: %paths', array('%paths' => $paths)), 'warning');
   }
 }
@@ -52,5 +55,17 @@ function final_polish_disable() {
  * Implements hook_uninstall().
  */
 function final_polish_uninstall() {
+  // Just deleting our variable.
   variable_del('final_polish_remove_paths');
+}
+
+/**
+ * Convert Final Polish settings.
+ */
+function final_polish_update_7001(&$sandbox) {
+  // Let's convert the string with the paths to an array.
+  $paths = variable_get('final_polish_remove_paths', '');
+  $paths = explode("\n", $paths);
+
+  variable_set('final_polish_remove_paths', $paths);
 }

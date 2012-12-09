@@ -9,7 +9,10 @@
  * Form constructor for the Final Polish configuration form.
  */
 function final_polish_configure($form, &$form_state) {
-  $form['#submit'] = array('final_polish_configure_validate');
+  // We have to add our own validation and submit function
+  // because we make use of the system_settings_form function
+  // to save the variables automatically.
+  $form['#validate'] = array('final_polish_configure_validate');
   $form['#submit'] = array('final_polish_configure_submit');
 
   $paths = variable_get('final_polish_remove_paths', array());
@@ -37,21 +40,28 @@ function final_polish_configure($form, &$form_state) {
   return system_settings_form($form);
 }
 
+/**
+ * Validator for final_polish_configure() form.
+ */
 function final_polish_configure_validate($form, &$form_state) {
    $values = &$form_state['values'];
+   $paths = array();
 
-   // We need an array instead of an array.
-   $paths = explode("\n", $values['final_polish_remove_paths']);
+   if (!empty($values['final_polish_remove_paths'])) {
+     // We need an array instead of an array.
+     $paths = explode("\n", $values['final_polish_remove_paths']);
 
-   foreach ($paths as $k => $path) {
-     $paths[$k] = trim($path);
+     // We have to trim every item because of the break.
+     foreach ($paths as $k => $path) {
+       $paths[$k] = trim($path);
+     }
    }
 
    $values['final_polish_remove_paths'] = $paths;
 }
 
 /**
- * Process final_polish_configure form submissions.
+ * Process final_polish_configure() form submissions.
  */
 function final_polish_configure_submit($form, &$form_state) {
   $values = $form_state['values'];
@@ -59,11 +69,16 @@ function final_polish_configure_submit($form, &$form_state) {
 
   $new_paths = $values['final_polish_remove_paths'];
 
+  // We have to trim every item because of the break.
   foreach ($new_paths as $k => $new_path) {
     $new_paths[$k] = trim($new_path);
   }
 
-  if (array_diff($paths, $new_paths)) {
+  $diff = array_diff($paths, $new_paths);
+  $diff_count = count($diff);
+
+  if ($diff_count || (!$diff_count && count($new_paths) != count($paths))) {
+    // To remove the new paths we have to rebuild the menu.
     menu_rebuild();
   }
 }
