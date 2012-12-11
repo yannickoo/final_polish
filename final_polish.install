@@ -64,8 +64,10 @@ function final_polish_uninstall() {
  */
 function final_polish_update_7001(&$sandbox) {
   // Let's convert the string with the paths to an array.
-  $paths = variable_get('final_polish_remove_paths', '');
-  $paths = explode("\n", $paths);
-
-  variable_set('final_polish_remove_paths', $paths);
+  $paths = variable_get('final_polish_remove_paths');
+  // Only convert the variable when it's a string.
+  if (is_string($paths)) {
+    $paths = explode("\n", $paths);
+    variable_set('final_polish_remove_paths', $paths);
+  }
 }
