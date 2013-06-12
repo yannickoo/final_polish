@@ -355,7 +355,7 @@ function final_polish_icon_get_icon($type, $styled = TRUE, $theme = '') {
     if (!empty($icon) && file_uri_scheme($icon) == 'public') {
       if ($styled) {
         $icon = file_uri_target($icon);
-        $icon = image_style_path($settings['style'], $icon);
+        $icon = image_style_url($settings['style'], $icon);
       }
       $icon = file_create_url($icon);
     }
