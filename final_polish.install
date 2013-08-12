@@ -9,7 +9,7 @@
  * Implements hook_install().
  */
 function final_polish_install() {
-  $front = variable_get('site_frontpage');
+  $front = variable_get('site_frontpage', 'node');
 
   $paths = array(
     'filter/tips',
