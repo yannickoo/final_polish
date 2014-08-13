@@ -9,7 +9,7 @@
 
 Current Maintainers:
 
-* [Yannick Leyendecker](http://drupal.org/user/531118)
+* [yannickoo](http://drupal.org/user/531118)
 
 This module adds an icon section to your appearance settings.
 It also adds the missing
