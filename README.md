@@ -2,7 +2,7 @@
 
 Current Maintainers:
 
-* [Yannick Leyendecker](https://www.drupal.org/u/yannickoo)
+* [yannickoo](https://www.drupal.org/u/yannickoo)
 
 This module takes care about a few things that are commonly ommited
 before launching a drupal site.
