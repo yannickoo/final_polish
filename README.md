@@ -1,20 +1,13 @@
-# Final Polish
-
-## Contents of this file
-
-* Introduction
-* Installation
-
-## Introduction
+# Introduction
 
 Current Maintainers:
 
-* [Yannick Leyendecker](http://drupal.org/user/531118)
+* [Yannick Leyendecker](https://www.drupal.org/u/yannickoo)
 
 This module takes care about a few things that are commonly ommited
 before launching a drupal site.
 
-## Installation
+# Installation
 
 1. Install the module the [drupal way].
 2. Go to the [configuration] page.
